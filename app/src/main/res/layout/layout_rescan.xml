@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#8FD4D4D4"
+    >
+
+    <RelativeLayout
+        android:layout_width="280dp"
+        android:layout_height="200dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/shape_rectangle_white"
+        >
+
+        <TextView
+            android:id="@+id/re_scan_title"
+            android:text="提示"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/MainHintTextStyle"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:textStyle="bold"
+            android:textSize="18dp"
+            />
+
+
+        <TextView
+            android:id="@+id/re_scan_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/MainTextStyle"
+            android:layout_marginTop="25dp"
+            android:layout_below="@+id/re_scan_title"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:text="本次扫描暂时未找到设备，请重试一次！"
+            />
+
+        <RelativeLayout
+            android:id="@+id/re_scan_action"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_below="@+id/re_scan_content"
+            android:layout_marginTop="20dp"
+            >
+
+            <Button
+                android:id="@+id/re_scan_ok"
+                android:layout_width="80dp"
+                android:layout_height="40dp"
+                style="@style/MainButtonStyle"
+                android:text="确定"
+                android:layout_marginLeft="30dp"
+                android:layout_alignParentLeft="true"
+                />
+
+            <Button
+                android:id="@+id/re_scan_cancel"
+                android:layout_width="80dp"
+                android:layout_height="40dp"
+                style="@style/MainButtonStyle"
+                android:text="取消"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="30dp"
+                />
+
+
+        </RelativeLayout>
+
+
+    </RelativeLayout>
+
+
+</RelativeLayout>

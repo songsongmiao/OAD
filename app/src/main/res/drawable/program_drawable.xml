@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 一个滑块，从左边到右边滑动 -->
+        <item android:id="@android:id/background">
+            <shape>
+                <corners android:radius="5dip" />
+                <solid android:color="#e7e717"/>
+            </shape>
+        </item>
+        <item android:id="@android:id/secondaryProgress">
+            <clip>
+                <shape>
+                    <corners android:radius="5dip" />
+                    <solid android:color="#FF8000"/>
+                </shape>
+            </clip>
+        </item>
+        <item android:id="@android:id/progress">
+            <scale            android:scaleWidth="100%" >
+                <shape>
+                    <corners android:radius="5dip" />
+                    <solid android:color="#FF4000"></solid>
+                </shape>
+            </scale>
+        </item>
+
+
+
+</layer-list>

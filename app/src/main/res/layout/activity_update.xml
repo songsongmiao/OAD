@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/update_version_container"
+        android:layout_width="210dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:layout_centerHorizontal="true"
+
+        >
+        <TextView
+            android:id="@+id/update_version_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/MainHintTextStyle"
+            android:text="蓝牙版本："
+            />
+        <TextView
+            android:id="@+id/update_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/MainTextStyle"
+            android:layout_toRightOf="@+id/update_version_text"
+            android:layout_alignBaseline="@+id/update_version_text"
+            android:text="-- --"
+            />
+
+
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/update_hard_container"
+        android:layout_width="210dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/update_version_container"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        >
+        <TextView
+            android:id="@+id/update_hard_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/MainHintTextStyle"
+            android:text="硬件版本："
+            />
+        <TextView
+            android:id="@+id/update_hard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/MainTextStyle"
+            android:layout_toRightOf="@+id/update_hard_text"
+            android:layout_alignBaseline="@+id/update_hard_text"
+            android:text="-- --"
+            />
+
+    </RelativeLayout>
+
+
+    <FrameLayout
+        android:id="@+id/update_progress_container"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/update_hard_container"
+        android:layout_marginTop="20dp"
+        >
+        <com.zupig.update.CircleView
+            android:id="@+id/update_process"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:linecolor="@color/yellow"
+            app:linewidth="1dp"
+            app:circleRadius="5dp"
+            app:offset="8dp"
+            />
+
+
+        <TextView
+            android:id="@+id/update_process_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-- --"
+            android:layout_gravity="center"
+            android:textSize="12sp"
+            android:textColor="#828282"
+            />
+
+    </FrameLayout>
+
+
+    <Button
+        android:id="@+id/update_update"
+        android:layout_width="200dp"
+        android:layout_height="48dp"
+        android:layout_below="@+id/update_progress_container"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:text="-- --"
+        android:textColor="#FFFFFF"
+        android:padding="4dp"
+        android:background="@drawable/selector_update"
+        />
+
+
+
+
+</RelativeLayout>

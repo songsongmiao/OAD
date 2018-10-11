@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <RelativeLayout
+        android:id="@+id/main_connect_container"
+        android:layout_width="match_parent"
+        android:layout_height="190dp"
+        android:layout_margin="10dp"
+        android:background="@drawable/shape_container"
+        >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_device_name"
+            style="@style/MainHintTextStyle"
+            android:text="设备名称："
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_device"
+            android:layout_toRightOf="@+id/main_connect_device_name"
+            android:layout_alignBaseline="@+id/main_connect_device_name"
+            style="@style/MainTextStyle"
+            />
+
+        <TextView
+            android:id="@+id/main_connect_status_name"
+            style="@style/MainHintTextStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/main_connect_device_name"
+            android:layout_marginLeft="15dp"
+            android:text="连接状态:" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_status"
+            android:layout_alignBaseline="@+id/main_connect_status_name"
+            android:layout_toRightOf="@+id/main_connect_status_name"
+            style="@style/MainTextStyle"
+            />
+
+
+        <TextView
+            android:id="@+id/main_connect_version_code"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前版本："
+            android:layout_below="@+id/main_connect_status_name"
+            style="@style/MainHintTextStyle"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_version"
+            android:layout_alignBaseline="@+id/main_connect_version_code"
+            android:layout_toRightOf="@+id/main_connect_version_code"
+            style="@style/MainTextStyle"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_hard_code"
+            android:layout_below="@+id/main_connect_version_code"
+            style="@style/MainHintTextStyle"
+            android:text="硬件版本："
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_hard"
+            android:layout_alignBaseline="@+id/main_connect_hard_code"
+            android:layout_toRightOf="@+id/main_connect_hard_code"
+            style="@style/MainTextStyle"
+            />
+
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/main_connect_select"
+        android:layout_below="@+id/main_connect_hard_code"
+        style="@style/MainButtonStyle"
+        android:text="选择设备"
+        />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_online"
+            android:layout_toRightOf="@+id/main_connect_select"
+            android:layout_alignBaseline="@+id/main_connect_select"
+            style="@style/MainButtonStyle"
+            android:text="连接设备"
+            />
+
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/main_connect_disconnect"
+            android:layout_toRightOf="@+id/main_connect_online"
+            android:layout_alignBaseline="@+id/main_connect_online"
+            style="@style/MainButtonStyle"
+            android:text="断开连接"
+            />
+
+    </RelativeLayout>
+
+    <ScrollView
+        android:id="@+id/main_update"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/main_connect_container"
+        android:scrollbars="none"
+        >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+            <RelativeLayout
+                android:id="@+id/main_version_container"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:background="@drawable/shape_container"
+                android:layout_margin="10dp"
+                >
+
+                <TextView
+                    android:id="@+id/main_location_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/MainHintTextStyle"
+                    android:text="本地OAD升级"
+                    android:layout_centerHorizontal="true"
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_location_version_code"
+                    android:layout_below="@+id/main_location_name"
+                    style="@style/MainHintTextStyle"
+                    android:text="选择文件版本："
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_location_version"
+                    android:layout_alignBaseline="@+id/main_location_version_code"
+                    android:layout_toRightOf="@+id/main_location_version_code"
+                    style="@style/MainTextStyle"
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_location_hard_code"
+                    android:layout_below="@+id/main_location_version_code"
+                    style="@style/MainHintTextStyle"
+                    android:text="文件硬件版本："
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_location_hard"
+                    android:layout_alignBaseline="@+id/main_location_hard_code"
+                    android:layout_toRightOf="@+id/main_location_hard_code"
+                    style="@style/MainTextStyle"
+                    />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_location_select"
+                    android:layout_below="@+id/main_location_hard_code"
+                    style="@style/MainButtonStyle"
+                    android:text="选择文件"
+                    />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_location_update"
+                    android:layout_toRightOf="@+id/main_location_select"
+                    android:layout_alignBaseline="@+id/main_location_select"
+                    style="@style/MainButtonStyle"
+                    android:text="进行升级"
+                    />
+
+
+
+
+
+            </RelativeLayout>
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:id="@+id/main_online_container"
+                android:layout_below="@+id/main_version_container"
+                android:background="@drawable/shape_container"
+                android:layout_margin="10dp"
+                >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_online_name"
+                    android:text="在线OAD升级"
+                    style="@style/MainHintTextStyle"
+                    android:layout_centerHorizontal="true"
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_online_version_code"
+                    android:layout_below="@+id/main_online_name"
+                    style="@style/MainHintTextStyle"
+                    android:text="文件版本："
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_online_version"
+                    android:layout_toRightOf="@+id/main_online_version_code"
+                    android:layout_alignBaseline="@+id/main_online_version_code"
+                    style="@style/MainTextStyle"
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_online_hard_code"
+                    android:layout_below="@+id/main_online_version"
+                    android:layout_marginTop="10dp"
+                    style="@style/MainHintTextStyle"
+                    android:text="硬件版本："
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_online_hard"
+                    android:layout_alignBaseline="@+id/main_online_hard_code"
+                    android:layout_toRightOf="@+id/main_online_hard_code"
+                    style="@style/MainTextStyle"
+                    />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/main_online_hard_code"
+                    style="@style/MainButtonStyle"
+                    android:id="@+id/main_online_refresh"
+                    android:text="获取信息"
+                    />
+
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/main_online_update"
+                    style="@style/MainButtonStyle"
+                    android:layout_toRightOf="@+id/main_online_refresh"
+                    android:layout_alignBaseline="@+id/main_online_refresh"
+                    android:text="进行升级"
+                    />
+
+
+
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+     </ScrollView>
+
+</RelativeLayout>

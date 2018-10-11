@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="circle_view">
+
+        <attr name="linecolor" format="reference|color"/>
+        <attr name="linewidth" format="reference|dimension"/>
+        <attr name="circleRadius" format="reference|dimension"/>
+        <!-- 内圆环偏离边框的距离-->
+        <attr name="offset" format="dimension|reference"/>
+
+    </declare-styleable>
+
+</resources>
