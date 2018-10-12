@@ -37,16 +37,21 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE;
 
-public class BleSubService extends Service {
-
+public class BleService extends Service {
     private final String TAG  = "BlueService";
     private final boolean isDebug = true;
     private String mDeviceName;
-    private static boolean isConnect = false;
+//    private boolean isConnect = false;
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothAdapter mBluetoothAdapter;
+//    private int size = 0;//É¨Ãèµ±Ç°¶àÉÙÌõÊı¾İ
 
+    /***
+     * µ±Ç°µÄÁ¬½ÓÇëÇóÒ»´Î³É¹¦¿ÉÄÜĞÔ½ÏµÍ
+     * ¿ÉÒÔ×öÈı´ÎÑ­»·ÇëÇó
+     */
+//    private boolean isFirst  = false;
 
     private BluetoothAdapter.LeScanCallback mScanCallback= new BluetoothAdapter.LeScanCallback() {
         @Override
@@ -73,18 +78,19 @@ public class BleSubService extends Service {
             String address = device.getAddress();
             if(name == null) return ;
 //            if(isDebug) Log.i(TAG,"name : "+ name + "\t address : "+ address);
-            if(name.equals(mDeviceName)) // è¿æ¥è®¾å¤‡
+            if(name.equals(mDeviceName)) // Á¬½ÓÉè±¸
             {
                 if(mDeviceName == null || mBluetoothAdapter== null)
                     return ;
+                if(isDebug) Log.i(TAG,"connect -> name : "+ name + "\t address : "+ address);
                 mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(address);
-                mBluetoothGatt = mBluetoothDevice.connectGatt(BleSubService.this,false,mBluetoothGattCallback);//è¿æ¥å½“å‰çš„è®¾å¤‡,åˆå§‹åŒ–è“ç‰™Gatt å¯¹è±¡
+                mBluetoothGatt = mBluetoothDevice.connectGatt(BleService.this,false,mBluetoothGattCallback);//Á¬½Óµ±Ç°µÄÉè±¸,³õÊ¼»¯À¶ÑÀGatt ¶ÔÏó
                 mBluetoothAdapter.stopLeScan(mScanConnectCallback);
             }
         }
     };
 
-    //å¸¸ç”¨å‘½ä»¤ç‰¹å¾å€¼ï¼š
+    //³£ÓÃÃüÁîÌØÕ÷Öµ£º
     private BluetoothGattCharacteristic mCommonCharaceristic;
     private BluetoothGattCharacteristic mHeadCharacteristic;
     private BluetoothGattCharacteristic mBodyCharacteristic;
@@ -98,18 +104,8 @@ public class BleSubService extends Service {
         this.mCallBack = mCallBack;
     }
 
-    public BluetoothDevice getDevice()
-    {
-        return mBluetoothDevice;
-    }
 
-    public void setmBluetoothDevice(BluetoothDevice mBluetoothDevice)
-    {
-        this.mBluetoothDevice = mBluetoothDevice;
-    }
-
-
-    //BLEå‚æ•°ä¿¡æ¯
+    //BLE²ÎÊıĞÅÏ¢
     public final String UUID_SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb";
     public final String UUID_GATT = "0000ffe1-0000-1000-8000-00805f9b34fb";
     public final String UUID_DESCRIPTOR="00002902-0000-1000-8000-00805f9b34fb";
@@ -120,10 +116,10 @@ public class BleSubService extends Service {
 
 
     /**
-     * è“ç‰™å›è°ƒæ•°æ®ä»£ç 
+     * À¶ÑÀ»Øµ÷Êı¾İ´úÂë
      */
     /**
-     * è“ç‰™å›è°ƒæ•°æ®ä»£ç 
+     * À¶ÑÀ»Øµ÷Êı¾İ´úÂë
      */
 
     private final byte[] setHeart = {0x30,0x00,0x00};
@@ -133,17 +129,13 @@ public class BleSubService extends Service {
 
 
     /**
-     * è“ç‰™å‘½ä»¤
+     * À¶ÑÀÃüÁî
      */
     public final static String SET_CONNECT= "AT+BLEConnect";
 
-
     /***
-     * OAD æ–‡ä»¶å¤„ç†
+     * OAD ÎÄ¼ş´¦Àí
      */
-    private final int OAD_BLOCK_SIZE = 16;
-    private byte[] mFileBuffer ;
-    private ImageA image = new ImageA();
     private String softVersion;
     private String hardVeriosn;
 
@@ -157,11 +149,6 @@ public class BleSubService extends Service {
         this.mDeviceName = deviceName;
     }
 
-    public String  getDeviceName()
-    {
-        return  this.mDeviceName;
-    }
-
 
     private Handler mHandler = new Handler(){
 
@@ -171,16 +158,17 @@ public class BleSubService extends Service {
             switch (msg.what)
             {
                 case COMMAND:
-                    if(!isConnect)
-                    {
-                        orderQueue.clear();
-                        mHandler.removeMessages(COMMAND);
-                        return ;
-                    }
+//                    if(!isConnect)
+//                    {
+//                        orderQueue.clear();
+//                        mHandler.removeMessages(COMMAND);
+//                        return ;
+//                    }
+                    Log.i(TAG,"·¢ËÍÃüÁî ->  ");
                     if(orderQueue.size() > 0 )
                     {
                         mLock.lock();
-                        BleQuest mBleRuest = orderQueue.poll();
+                        BleQuest mBleRuest = orderQueue.poll();//ÄÃµ½Í·²¿Êı¾İ£¬²¢É¾³ı°®Êı¾İ
                         BluetoothGattCharacteristic mCharacteristic = mBleRuest.mCharacteristic;
                         boolean isWrite = mBleRuest.isWrite;
                         if(mBluetoothGatt != null && mCharacteristic != null)
@@ -196,8 +184,14 @@ public class BleSubService extends Service {
                             byte[] data = mCharacteristic.getValue();
                             int[] bleCode = arrayByteToInt(data);
                             String message  = intArrToString(bleCode);
-                            Log.i(TAG,"å½“å‰çš„æ•°æ®ï¼š "+ message + "\t order: "+new String(data));
+                            Log.i(TAG,"µ±Ç°µÄÊı¾İ£º "+ message + "\t order: "+new String(data) + "\norder size:" + orderQueue.size());
 
+                        }else{
+                            Log.i(TAG,"µ±Ç°µÄÌØÕ÷ÖµÎª¿Õ£¡£¡£¡£¡ ");
+                            orderQueue.clear();
+                            mHandler.removeMessages(COMMAND);
+                            mLock.unlock();
+                            return;
                         }
 //                        preQueue.remove(mBleRuest);
                         mLock.unlock();
@@ -218,7 +212,7 @@ public class BleSubService extends Service {
                     }
                     break;
                 case 0x902:
-                    isConnect = false;
+//                    isConnect = false;
                     onConnect();
             }
 
@@ -227,13 +221,13 @@ public class BleSubService extends Service {
     };
 
 
-    public BleBinder mBinder = new BleBinder();
+    private BleBinder mBinder = new BleBinder();
 
     public class BleBinder extends Binder {
 
-        public BleSubService getService()
+        public BleService getService()
         {
-            return BleSubService.this;
+            return BleService.this;
         }
     }
 
@@ -252,65 +246,6 @@ public class BleSubService extends Service {
         mLock.unlock();
     }
 
-    public void onConnect()
-    {
-        if(isConnect)
-        {
-            if(isDebug)Log.i(TAG,"onScan å½“å‰è¿æ¥å·²ç»æˆåŠŸ");
-            return;
-        }
-        if(mDeviceName == null)
-        {
-//            throw new NullPointerException("Please set the device name before scanning the device!");
-            //å¼¹ä¸€ä¸ªæç¤ºæ¡†ï¼Œé€€å‡ºæœ¬ç•Œé¢
-            return ;
-        }
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if(mCallBack!= null) mCallBack.onConnect(3);
-            }
-        });
-        if(mBluetoothAdapter == null)
-        {
-            final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
-            mBluetoothAdapter = manager.getAdapter();
-        }
-        boolean isAccess = mBluetoothAdapter.isEnabled();
-        if(!isAccess)
-            mBluetoothAdapter.enable();
-        boolean success = mBluetoothAdapter.startLeScan(mScanConnectCallback);
-        if(!success)
-        {
-            //æç¤ºç”¨æˆ·æ‰«æå¤±è´¥
-            mBluetoothAdapter.stopLeScan(mScanConnectCallback);
-            if(!isConnect)
-            {
-                if(mCallBack!= null) mCallBack.onConnect(0);
-            }
-        }
-        else
-        {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if(mBluetoothAdapter == null)
-                    {
-                        final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
-                        mBluetoothAdapter = manager.getAdapter();
-                    }
-                    mBluetoothAdapter.stopLeScan(mScanConnectCallback); //5ç§’ååœæ­¢æ‰«æ
-                    if(!isConnect)
-                    {
-                        if(mCallBack!= null) mCallBack.onConnect(0);
-                    }
-                }
-            },3000);
-        }
-    }
-
-
-
     public boolean isMatch()
     {
         final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
@@ -325,24 +260,62 @@ public class BleSubService extends Service {
 
     }
 
-    public void onRestartConnect()
-    {
-        onDisConnected();
-        closeAccess();
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                openAccessBlue();
-            }
-        },1500);
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                onConnect();
-            }
-        },8000);
-    }
 
+    public void onConnect()
+    {
+//        isConnect = false;
+//        if(isConnect)
+//        {
+//            if(isDebug)Log.i(TAG,"onScan µ±Ç°Á¬½ÓÒÑ¾­³É¹¦");
+//            return;
+//        }
+        if(mDeviceName == null)
+        {
+//            throw new NullPointerException("Please set the device name before scanning the device!");
+            //µ¯Ò»¸öÌáÊ¾¿ò£¬ÍË³ö±¾½çÃæ
+            return ;
+        }
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if(mCallBack!= null) mCallBack.onConnect(3);
+            }
+        });
+        if(mBluetoothAdapter == null)
+        {
+            final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
+            mBluetoothAdapter = manager.getAdapter();
+        }
+        boolean success = mBluetoothAdapter.startLeScan(mScanConnectCallback);
+        if(!success)
+        {
+            //ÌáÊ¾ÓÃ»§É¨ÃèÊ§°Ü
+            mBluetoothAdapter.stopLeScan(mScanConnectCallback);
+//            size = -1;
+//            if(!isConnect)
+//            {
+//                if(mCallBack!= null) mCallBack.onConnect(0);
+//            }
+        }
+        else
+        {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if(mBluetoothAdapter == null)
+                    {
+                        final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
+                        mBluetoothAdapter = manager.getAdapter();
+                    }
+                    mBluetoothAdapter.stopLeScan(mScanConnectCallback); //5ÃëºóÍ£Ö¹É¨Ãè
+//                    if(!isConnect)
+//                    {
+//                        if(mCallBack!= null) mCallBack.onConnect(0);
+//                    }
+                }
+            },3000);
+        }
+    }
 
     public void openAccessBlue()
     {
@@ -362,6 +335,7 @@ public class BleSubService extends Service {
 
     public void onScann()
     {
+
         if(mDeviceName == null)
         {
             return ;
@@ -380,7 +354,7 @@ public class BleSubService extends Service {
         boolean success = mBluetoothAdapter.startLeScan(mScanConnectCallback);
         if(!success)
         {
-            //æç¤ºç”¨æˆ·æ‰«æå¤±è´¥
+            //ÌáÊ¾ÓÃ»§É¨ÃèÊ§°Ü
             mBluetoothAdapter.stopLeScan(mScanConnectCallback);
             if(mCallBack!= null) mCallBack.onConnect(0);
         }
@@ -389,41 +363,22 @@ public class BleSubService extends Service {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mBluetoothAdapter.stopLeScan(mScanConnectCallback); //5ç§’ååœæ­¢æ‰«æ
+                    mBluetoothAdapter.stopLeScan(mScanConnectCallback); //5ÃëºóÍ£Ö¹É¨Ãè
                 }
             },3000);
         }
 
     }
 
-    /**
-     *  å°†æ—¶é—´è½¬æ¢æˆç§ŸæœŸå‘½ä»¤æ ¼å¼
-     *  @param mDay å¤©æ•°
-     *  @param mHour å°æ—¶
-     *  @param mMin åˆ†é’Ÿ
-     *  @param mSecond ç§’
-     *  @return ç§ŸæœŸå‘½ä»¤
-     */
-    public static byte[] timeToRent(long mDay,long mHour,long mMin,long mSecond){
 
-        byte[] rentTime={0x41,0x54,0x2B,0x44,0x65,0x61,0x64,0x4C,0x69,0x6E,0x65,0x3D,0x0,0x0,0x0,0x0,0x0};//H<=0x18 M<=3C S<=60
-        rentTime[12]=(byte)(mDay>>8);
-        rentTime[13]=(byte)mDay;
-        rentTime[14]=(byte)mHour;
-        rentTime[15]=(byte)mMin;
-        rentTime[16]=(byte)mSecond;
-        return rentTime;
-    }
-
-
-    /************************************ * æµ‹è¯•åŒºåŸŸä»£ç  begin * *************************************************/
+    /************************************ * ²âÊÔÇøÓò´úÂë begin * *************************************************/
     public void onScanAllDevice()
     {
         if (mBluetoothGatt != null) {
             mBluetoothGatt.close();
             mBluetoothGatt = null;
         }
-        if(isDebug) Log.i(TAG,"æ‰«æå‘¨å›´çš„è®¾å¤‡ï¼");
+        if(isDebug) Log.i(TAG,"É¨ÃèÖÜÎ§µÄÉè±¸£¡");
         boolean success = mBluetoothAdapter.startLeScan(mScanCallback);
         if(!success && mCallBack != null)
             mCallBack.onConnect(0);
@@ -440,25 +395,44 @@ public class BleSubService extends Service {
 
     public void onStopScanAllDevice()
     {
-        if(mBluetoothAdapter != null )
+        if(mBluetoothAdapter == null )
         {
-            mBluetoothAdapter.stopLeScan(mScanCallback);
+            BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
+            mBluetoothAdapter = manager.getAdapter();
         }
+        mBluetoothAdapter.stopLeScan(mScanCallback);
+
     }
 
-    public void onConnectDevice(BluetoothDevice mBluetoothDevice)
+    public void onReScan()
     {
-        this.mBluetoothDevice = mBluetoothDevice;
-        mBluetoothGatt = mBluetoothDevice.connectGatt(BleSubService.this,false,mBluetoothGattCallback);//è¿æ¥å½“å‰çš„è®¾å¤‡,åˆå§‹åŒ–è“ç‰™Gatt å¯¹è±¡
+        closeAccess();
+
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                openAccessBlue();
+            }
+        },1500);
+
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                onScanAllDevice();
+            }
+        },6500);
+
     }
 
-    /************************************ * æµ‹è¯•åŒºåŸŸä»£ç  end * *************************************************/
+    /************************************ * ²âÊÔÇøÓò´úÂë end * *************************************************/
+
+
 
 
 
     public void onDisConnected()
     {
-        isConnect = false;
+//        isConnect = false;
         if (mBluetoothGatt == null) {
             return;
         }
@@ -482,10 +456,11 @@ public class BleSubService extends Service {
 
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            if(isDebug) Log.i(TAG,"onConnectionStateChange è“ç‰™è¿æ¥çŠ¶æ€æ”¹å˜ï¼š "+ newState);
+            if(isDebug) Log.i(TAG,"onConnectionStateChange À¶ÑÀÁ¬½Ó×´Ì¬¸Ä±ä£º "+ newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                isConnect = true;
-                mBluetoothGatt.discoverServices();//åˆå§‹åŒ–æœåŠ¡
+//                isConnect = true;
+//                isFirst = false;
+                mBluetoothGatt.discoverServices();//³õÊ¼»¯·şÎñ
                 if(mCallBack != null)
                 {
                     mHandler.post(new Runnable() {
@@ -501,10 +476,10 @@ public class BleSubService extends Service {
             else if(newState == BluetoothProfile.STATE_DISCONNECTED)
             {
 
-                isConnect = false;
+//                isConnect = false;
                 if(mBluetoothGatt!= null) mBluetoothGatt.close();
                 mBluetoothGatt = null;
-                if(isDebug) Log.e(TAG,"onConnectionStateChange è¿æ¥å¤±è´¥");
+                if(isDebug) Log.e(TAG,"onConnectionStateChange Á¬½ÓÊ§°Ü");
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -516,7 +491,7 @@ public class BleSubService extends Service {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            if(isDebug) Log.i(TAG,"onServicesDiscovered è“ç‰™è¿æ¥çŠ¶æ€æ”¹å˜ï¼š "+ status);
+            if(isDebug) Log.i(TAG,"onServicesDiscovered À¶ÑÀÁ¬½Ó×´Ì¬¸Ä±ä£º "+ status);
             initService();
         }
 
@@ -558,7 +533,7 @@ public class BleSubService extends Service {
                             mCallBack.onRead(hardVeriosn,3);
 //                            checkOADStatue();
                             boolean isCharacter = hardVeriosn.matches("^[a-zA-Z_0-9.]+$");
-                            if(isDebug) Log.i(TAG,"onCharacteristicRead  åŒ…å«å­—æ¯ï¼š  "+ isCharacter);
+                            if(isDebug) Log.i(TAG,"onCharacteristicRead  °üº¬×ÖÄ¸£º  "+ isCharacter);
                         }
                     }
                 });
@@ -584,19 +559,19 @@ public class BleSubService extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             int[] bleCode = arrayByteToInt(characteristic.getValue());
             String message  = intArrToString(bleCode);
-            if(isDebug) Log.i(TAG,"onCharacteristicChanged è“ç‰™è®¾å¤‡å€¼è®¾ç½®å˜åŒ–ï¼š "+ message + "\t order: "+ new String(characteristic.getValue()));
+            if(isDebug) Log.i(TAG,"onCharacteristicChanged À¶ÑÀÉè±¸ÖµÉèÖÃ±ä»¯£º "+ message + "\t order: "+ new String(characteristic.getValue()));
             if(characteristic.getUuid().toString().contains("ffc4"))
             {
-                if(isDebug) Log.i(TAG,"onCharacteristicChanged ffc4 ï¼š"+ intArrToString(bleCode)+ "\t å½“å‰çš„è¿”å›å€¼ï¼š"+ characteristic.getValue());
+                if(isDebug) Log.i(TAG,"onCharacteristicChanged ffc4 £º"+ intArrToString(bleCode)+ "\t µ±Ç°µÄ·µ»ØÖµ£º"+ characteristic.getValue());
 
             }
             else if(characteristic.getUuid().toString().contains("ffc2")){
-                if(isDebug) Log.i(TAG,"onCharacteristicChanged ffc2 ï¼š"+ intArrToString(bleCode)+ "\t å½“å‰çš„è¿”å›å€¼ï¼š"+ characteristic.getValue());
+                if(isDebug) Log.i(TAG,"onCharacteristicChanged ffc2 £º"+ intArrToString(bleCode)+ "\t µ±Ç°µÄ·µ»ØÖµ£º"+ characteristic.getValue());
 
             }
             else if(characteristic.getUuid().toString().contains("ffc1"))
             {
-                if(isDebug) Log.i(TAG,"onCharacteristicChanged ffc1 ï¼š"+ intArrToString(bleCode)+ "\t å½“å‰çš„è¿”å›å€¼ï¼š"+ characteristic.getValue());
+                if(isDebug) Log.i(TAG,"onCharacteristicChanged ffc1 £º"+ intArrToString(bleCode)+ "\t µ±Ç°µÄ·µ»ØÖµ£º"+ characteristic.getValue());
 
             }
             else
@@ -609,7 +584,7 @@ public class BleSubService extends Service {
     };
 
     /***
-     * åˆå§‹åŒ–å½“å‰çš„ç‰¹å¾å€¼æœåŠ¡
+     * ³õÊ¼»¯µ±Ç°µÄÌØÕ÷Öµ·şÎñ
      */
     private void initService()
     {
@@ -621,25 +596,25 @@ public class BleSubService extends Service {
                 List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
                 for (final BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
 
-                    /**UUID_KEY_DATAæ˜¯å¯ä»¥è·Ÿè“ç‰™æ¨¡å—ä¸²å£é€šä¿¡çš„Characteristic*/
+                    /**UUID_KEY_DATAÊÇ¿ÉÒÔ¸úÀ¶ÑÀÄ£¿é´®¿ÚÍ¨ĞÅµÄCharacteristic*/
                     if (gattCharacteristic.getUuid().toString().equals(UUID_GATT)) {
 
-                        /**è¯»å–å½“å‰Characteristicæ•°æ®ï¼Œä¼šè§¦å‘mOnDataAvailable.onCharacteristicRead()*/
+                        /**¶ÁÈ¡µ±Ç°CharacteristicÊı¾İ£¬»á´¥·¢mOnDataAvailable.onCharacteristicRead()*/
                         mCommonCharaceristic = gattCharacteristic;
 
-                        /**æ¥å—Characteristicè¢«å†™çš„é€šçŸ¥,æ”¶åˆ°è“ç‰™æ¨¡å—çš„æ•°æ®åä¼šè§¦å‘mOnDataAvailable.onCharacteristicWrite()*/
+                        /**½ÓÊÜCharacteristic±»Ğ´µÄÍ¨Öª,ÊÕµ½À¶ÑÀÄ£¿éµÄÊı¾İºó»á´¥·¢mOnDataAvailable.onCharacteristicWrite()*/
                         setNotificationForCharacteristic(gattCharacteristic, true);
 
                         if(isDebug)Log.e(TAG,"initService UUID_GATT " + gattCharacteristic.getWriteType() +"\t getProperties:"+gattCharacteristic.getProperties() +"\t getPermissions:"+gattCharacteristic.getPermissions());
                     }
                 }
             }
-            else if(gattService.getUuid().toString().contains("ffc0"))  //å¤„ç†OADå›ºä»¶å‡çº§
+            else if(gattService.getUuid().toString().contains("ffc0"))  //´¦ÀíOAD¹Ì¼şÉı¼¶
             {
                 List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
                 for (final BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
 
-                    /**UUID_KEY_DATAæ˜¯å¯ä»¥è·Ÿè“ç‰™æ¨¡å—ä¸²å£é€šä¿¡çš„Characteristic*/
+                    /**UUID_KEY_DATAÊÇ¿ÉÒÔ¸úÀ¶ÑÀÄ£¿é´®¿ÚÍ¨ĞÅµÄCharacteristic*/
                     if (gattCharacteristic.getUuid().toString().contains("ffc1")) {
 
                         mHeadCharacteristic = gattCharacteristic;
@@ -670,7 +645,7 @@ public class BleSubService extends Service {
                 for ( BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
                     if (gattCharacteristic.getUuid().toString().contains("2a28")) {
 //                        setNotificationForCharacteristic(gattCharacteristic, true);
-                        //è·å–è½¯ä»¶ç‰ˆæœ¬å·ï¼š
+                        //»ñÈ¡Èí¼ş°æ±¾ºÅ£º
                         final BluetoothGattCharacteristic mCharacter = gattCharacteristic;
                         mCharacter.setValue(ENABLE_NOTIFICATION_VALUE);
                         mSoftCharacterisitc = mCharacter;
@@ -705,7 +680,7 @@ public class BleSubService extends Service {
             public void run() {
                 sendCommonData(SET_CONNECT);
             }
-        },80);
+        },8000);
     }
 
 
@@ -719,7 +694,6 @@ public class BleSubService extends Service {
      */
     private void setNotificationForCharacteristic(BluetoothGattCharacteristic ch, boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) return;
-
         final BluetoothGattDescriptor descriptor = ch.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
         if(descriptor != null) {
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
@@ -748,15 +722,14 @@ public class BleSubService extends Service {
 
 
 
-    /************************************** *  è“ç‰™å¸¸ç”¨é€šä¿¡ begin  * ***************************************************/
+    /************************************** *  À¶ÑÀ³£ÓÃÍ¨ĞÅ begin  * ***************************************************/
 
     public void sendCommonData(String order)
     {
         if(mBluetoothGatt == null || mCommonCharaceristic == null)
         {
-            Log.e(TAG,"å¸¸ç”¨çš„å‘½ä»¤ç‰¹å¾æœåŠ¡ä¸¢å¤±ï¼----å‘é€å‘½ä»¤ï¼š"+ order);
-            //åˆ¤æ–­è¿æ¥çŠ¶æ€ï¼Œå¦‚æœè¿æ¥æ ‡å¿—ä¸ºtrue å¼ºåˆ¶æ–­å¼€è¿æ¥ï¼Œé‡æ–°æ‰«æå½“å‰çš„è®¾å¤‡ï¼Œå¦‚æœæ‰«æå¤±è´¥ï¼Œæç¤ºç”¨æˆ·è¿æ¥çš„è®¾å¤‡æœªæ‰¾åˆ°
-
+            Log.e(TAG,"³£ÓÃµÄÃüÁîÌØÕ÷·şÎñ¶ªÊ§£¡----·¢ËÍÃüÁî£º"+ order);
+            //ÅĞ¶ÏÁ¬½Ó×´Ì¬£¬Èç¹ûÁ¬½Ó±êÖ¾Îªtrue Ç¿ÖÆ¶Ï¿ªÁ¬½Ó£¬ÖØĞÂÉ¨Ãèµ±Ç°µÄÉè±¸£¬Èç¹ûÉ¨ÃèÊ§°Ü£¬ÌáÊ¾ÓÃ»§Á¬½ÓµÄÉè±¸Î´ÕÒµ½
             return ;
         }
         mCommonCharaceristic.setValue(order);
@@ -767,30 +740,15 @@ public class BleSubService extends Service {
         mHandler.sendEmptyMessage(COMMAND);
     }
 
-    public void sendCommonData(String order,int time)
-    {
-        if(mBluetoothGatt == null || mCommonCharaceristic == null)
-        {
-            Log.e(TAG,"å¸¸ç”¨çš„å‘½ä»¤ç‰¹å¾æœåŠ¡ä¸¢å¤±ï¼----å‘é€å‘½ä»¤ï¼š"+ order);
-            //åˆ¤æ–­è¿æ¥çŠ¶æ€ï¼Œå¦‚æœè¿æ¥æ ‡å¿—ä¸ºtrue å¼ºåˆ¶æ–­å¼€è¿æ¥ï¼Œé‡æ–°æ‰«æå½“å‰çš„è®¾å¤‡ï¼Œå¦‚æœæ‰«æå¤±è´¥ï¼Œæç¤ºç”¨æˆ·è¿æ¥çš„è®¾å¤‡æœªæ‰¾åˆ°
 
-            return ;
-        }
-        mCommonCharaceristic.setValue(order);
-        BleQuest request = new BleQuest();
-        request.isWrite = true;
-        request.mCharacteristic = mCommonCharaceristic;
-        addOrder(request);
-        mHandler.sendEmptyMessageDelayed(COMMAND,time);
-    }
 
 
     public void sendCommonData(byte[] order)
     {
         if(mBluetoothGatt == null || mCommonCharaceristic == null)
         {
-            Log.e(TAG,"å¸¸ç”¨çš„å‘½ä»¤ç‰¹å¾æœåŠ¡ä¸¢å¤±ï¼");
-            //åˆ¤æ–­è¿æ¥çŠ¶æ€ï¼Œå¦‚æœè¿æ¥æ ‡å¿—ä¸ºtrue å¼ºåˆ¶æ–­å¼€è¿æ¥ï¼Œé‡æ–°æ‰«æå½“å‰çš„è®¾å¤‡ï¼Œå¦‚æœæ‰«æå¤±è´¥ï¼Œæç¤ºç”¨æˆ·è¿æ¥çš„è®¾å¤‡æœªæ‰¾åˆ°
+            Log.e(TAG,"³£ÓÃµÄÃüÁîÌØÕ÷·şÎñ¶ªÊ§£¡");
+            //ÅĞ¶ÏÁ¬½Ó×´Ì¬£¬Èç¹ûÁ¬½Ó±êÖ¾Îªtrue Ç¿ÖÆ¶Ï¿ªÁ¬½Ó£¬ÖØĞÂÉ¨Ãèµ±Ç°µÄÉè±¸£¬Èç¹ûÉ¨ÃèÊ§°Ü£¬ÌáÊ¾ÓÃ»§Á¬½ÓµÄÉè±¸Î´ÕÒµ½
 
             return ;
         }
@@ -802,63 +760,13 @@ public class BleSubService extends Service {
         mHandler.sendEmptyMessage(COMMAND);
     }
 
-    public void readComman(String key)
-    {
-        if(mBluetoothGatt == null )
-        {
-            Log.e(TAG,"å¸¸ç”¨çš„å‘½ä»¤ç‰¹å¾æœåŠ¡ä¸¢å¤±ï¼");
-            //åˆ¤æ–­è¿æ¥çŠ¶æ€ï¼Œå¦‚æœè¿æ¥æ ‡å¿—ä¸ºtrue å¼ºåˆ¶æ–­å¼€è¿æ¥ï¼Œé‡æ–°æ‰«æå½“å‰çš„è®¾å¤‡ï¼Œå¦‚æœæ‰«æå¤±è´¥ï¼Œæç¤ºç”¨æˆ·è¿æ¥çš„è®¾å¤‡æœªæ‰¾åˆ°
-
-            return ;
-        }
-        BleQuest request = new BleQuest();
-        request.isWrite = false;
-        addOrder(request);
-        mHandler.sendEmptyMessage(COMMAND);
-    }
-
-    public void getInformation()
-    {
-        if(mFireCharacteristic != null)
-        {
-            BleQuest request = new BleQuest();
-            request.isWrite = false;
-            request.mCharacteristic = mFireCharacteristic;
-            addOrder(request);
-        }
-        if(mSoftCharacterisitc != null)
-        {
-            BleQuest request = new BleQuest();
-            request.isWrite = false;
-            request.mCharacteristic = mSoftCharacterisitc;
-            addOrder(request);
-            mHandler.sendEmptyMessage(COMMAND);
-        }
-    }
-
-    private void readOADData()
-    {
-        if(mBluetoothGatt == null || mFinishCharacteristic == null)
-        {
-            Log.e(TAG,"å¸¸ç”¨çš„å‘½ä»¤ç‰¹å¾æœåŠ¡ä¸¢å¤±ï¼");
-            //åˆ¤æ–­è¿æ¥çŠ¶æ€ï¼Œå¦‚æœè¿æ¥æ ‡å¿—ä¸ºtrue å¼ºåˆ¶æ–­å¼€è¿æ¥ï¼Œé‡æ–°æ‰«æå½“å‰çš„è®¾å¤‡ï¼Œå¦‚æœæ‰«æå¤±è´¥ï¼Œæç¤ºç”¨æˆ·è¿æ¥çš„è®¾å¤‡æœªæ‰¾åˆ°
-
-            return ;
-        }
-        mFinishCharacteristic.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        BleQuest request = new BleQuest();
-        request.isWrite = false;
-        request.mCharacteristic = mFinishCharacteristic;
-        addOrder(request);
-    }
-
-    public boolean isConnect()
-    {
-        return isConnect;
-    }
+//    public boolean isConnect()
+//    {
+//        return isConnect;
+//    }
 
     /***
-     * è“ç‰™æ•°æ®æ¥æ”¶
+     * À¶ÑÀÊı¾İ½ÓÊÕ
      * @param code
      */
     private void onReceiverData(final byte[] code)
@@ -875,7 +783,7 @@ public class BleSubService extends Service {
                 mCallBack.onReceive(code);
             }
         });
-        if(code[0] == 48 )
+        if(code[0] == 48 || code[0] == 1)
         {
             sendCommonData(setHeart);
         }
@@ -886,7 +794,7 @@ public class BleSubService extends Service {
 
 
     /**
-     * å°†æ•°ç»„è½¬æ¢æˆå­—ç¬¦ä¸²è¾“å‡º
+     * ½«Êı×é×ª»»³É×Ö·û´®Êä³ö
      * @param intArray
      * @return
      */
@@ -906,8 +814,8 @@ public class BleSubService extends Service {
     }
 
     /**
-     * å°†byteç±»å‹æ•°ç»„è½¬ä¸ºintç±»å‹æ•°ç»„
-     * @params mByteæ•°ç»„
+     * ½«byteÀàĞÍÊı×é×ªÎªintÀàĞÍÊı×é
+     * @params mByteÊı×é
      * @return
      */
     public static int[] arrayByteToInt(byte[] mByte){
@@ -928,394 +836,5 @@ public class BleSubService extends Service {
     }
 
 
-    /************************************** *  è“ç‰™å¸¸ç”¨é€šä¿¡ end   * ***************************************************/
-
-
-
-
-
-
-
-
-    /************************************** * OAD æ–‡ä»¶åœ¨çº¿ä¸‹è½½begin * *********************************************/
-    private final String BaseURLOAD = "http://app.zupig.com/bcoadbin/";
-    //åˆ¤æ–­æ¥å…¥ç‚¹æ–¹å¼ï¼ˆnet/wapï¼‰ï¼Œæ¥å»ºç«‹è¿æ¥
-    private HttpURLConnection getConnection(String address) throws Exception {
-        HttpURLConnection conn = null;
-
-        @SuppressWarnings("deprecation")
-        String proxyHost = android.net.Proxy.getDefaultHost();
-        if (proxyHost != null) {
-            // wapæ–¹å¼ï¼Œè¦åŠ ç½‘å…³
-            @SuppressWarnings("deprecation")
-            java.net.Proxy p = new java.net.Proxy(java.net.Proxy.Type.HTTP,
-                    new InetSocketAddress(android.net.Proxy.getDefaultHost(),
-                            android.net.Proxy.getDefaultPort()));
-            conn = (HttpURLConnection) new URL(address).openConnection(p);
-        } else {
-            conn = (HttpURLConnection) new URL(address).openConnection();
-        }
-        return conn;
-    }
-
-
-    /***
-     * æ£€æŸ¥æ˜¯å¦éœ€è¦æ›´æ–°
-     */
-    public void checkOADStatue()
-    {
-        if(softVersion == null || hardVeriosn == null)
-        {
-            return ;
-        }
-        Runnable mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    String address = BaseURLOAD + softVersion + ".txt";
-                    String newFileInformation = onLoadData(address);
-                    String[] fileList = newFileInformation.split("=");
-                    String newVersion = fileList[0];
-                    Log.e(TAG,"æ¯”è¾ƒå½“å‰çš„ç¡¬ä»¶ç‰ˆæœ¬å·ï¼š "+ newVersion + "\t hardVersion: "+ hardVeriosn);
-                    if (newVersion.contains(hardVeriosn)) {
-                        //å½“å‰å·²ç»æ˜¯æœ€æ–°ç‰ˆæœ¬
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",5);
-                                    if(isDebug) Log.i(TAG,"å½“å‰çš„OAD ä¸ºæœ€æ–°ç‰ˆæœ¬ï¼");
-                                }
-                            }
-                        });
-                    }
-                    else
-                    {
-                        //å¯ä»¥ç»è¿›è¡Œæ›´æ–°
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",4);
-                                    if(isDebug) Log.i(TAG,"å½“å‰çš„OAD éœ€è¦å‡çº§ï¼");
-                                }
-                            }
-                        });
-                    }
-                }catch(Exception e)
-                {
-                    if(isDebug) Log.e(TAG,"æ£€æµ‹OADå‡çº§æ–‡ä»¶å¤±è´¥ï¼"+ e.getMessage());
-                }
-
-
-            }
-        };
-        Thread thread = new Thread(mRunnable);
-        thread.start();
-    }
-
-
-    /***
-     * æ£€æŸ¥æ˜¯å¦éœ€è¦æ›´æ–°
-     */
-    public void checkOADStatue(final String verion)
-    {
-        Runnable mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    if(softVersion == null) return ;
-                    String address = BaseURLOAD + verion;
-                    String newFileInformation = onLoadData(address);
-                    String[] fileList = newFileInformation.split("=");
-                    String newVersion = fileList[1];
-                    Log.e(TAG,"æ¯”è¾ƒå½“å‰çš„ç¡¬ä»¶ç‰ˆæœ¬å·ï¼š "+ newVersion + "\t hardVersion: "+ hardVeriosn + "\t adress: "+ address+ "\t text: "+ newFileInformation);
-                    if (newVersion.contains(softVersion)) {
-                        //å½“å‰å·²ç»æ˜¯æœ€æ–°ç‰ˆæœ¬
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",5);
-                                    if(isDebug) Log.i(TAG,"å½“å‰çš„OAD ä¸ºæœ€æ–°ç‰ˆæœ¬ï¼");
-                                }
-                            }
-                        });
-                    }
-                    else
-                    {
-                        //å¯ä»¥ç»è¿›è¡Œæ›´æ–°
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",4);
-                                    if(isDebug) Log.i(TAG,"å½“å‰çš„OAD éœ€è¦å‡çº§ï¼");
-                                }
-                            }
-                        });
-                    }
-                }catch(Exception e)
-                {
-                    if(isDebug) Log.e(TAG,"æ£€æµ‹OADå‡çº§æ–‡ä»¶å¤±è´¥ï¼"+ e.getMessage());
-                }
-
-
-            }
-        };
-        Thread thread = new Thread(mRunnable);
-        thread.start();
-    }
-
-
-    /***
-     * è¿›è¡ŒOAD åœ¨çº¿å‡çº§
-     */
-    public void onUpgradeFile(String version)
-    {
-        this.softVersion = version;
-        Runnable mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    String address = BaseURLOAD + softVersion ;
-                    if(isDebug) Log.e(TAG,"å½“å‰åœ°å€ï¼š"+ address);
-                    String newFileInformation = onLoadData(address);
-                    String[] fileList = newFileInformation.split("=");
-                    //å¯ä»¥è¿›è¡Œæ›´æ–°
-                    String updateVersion = fileList[1];
-                    updateOAD(updateVersion);
-                }catch(Exception e)
-                {
-                    if(isDebug) Log.e(TAG,"æ£€æµ‹OADå‡çº§æ–‡ä»¶å¤±è´¥ï¼"+ e.getMessage());
-                }
-
-            }
-        };
-
-        Thread thread = new Thread(mRunnable);
-        thread.start();
-    }
-
-
-    //åŠ è½½åœ¨çº¿OADæ–‡ä»¶çš„æ–‡ä»¶å
-    private String onLoadData(String address)
-    {
-        HttpURLConnection conn = null;
-        String response = null;
-        try{
-            conn = getConnection(address);
-            conn.setConnectTimeout(6 * 1000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET");
-            int code = conn.getResponseCode();
-            if (code == HttpURLConnection.HTTP_OK) {
-                InputStream is = conn.getInputStream();
-                BufferedReader buffer = new BufferedReader(new InputStreamReader(is));
-                response = buffer.readLine();
-                buffer.close();
-                is.close();
-            }
-        }
-        catch(Exception e)
-        {
-            if(isDebug)Log.e(TAG,"åŠ è½½æ–‡ä»¶å¤±è´¥ï¼š "+ e.getMessage());
-        }
-        return response;
-    }
-
-
-
-    //åŠ è½½åœ¨çº¿OAD æ–‡ä»¶çš„æ–‡ä»¶å†…å®¹
-    private InputStream onDownLoadOAD(String address)
-    {
-        HttpURLConnection conn = null;
-        InputStream response = null;
-        try{
-            conn = getConnection(address);
-            conn.setConnectTimeout(6 * 1000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET");
-            int code = conn.getResponseCode();
-            if (code == HttpURLConnection.HTTP_OK) {
-                response = conn.getInputStream();
-            }
-        }
-        catch(Exception e)
-        {
-            if(isDebug)Log.e(TAG,"åŠ è½½æ–‡ä»¶å¤±è´¥ï¼š "+ e.getMessage());
-        }
-        return response;
-    }
-
-
-    //åˆå§‹åŒ–OAD æ–‡ä»¶ä¸­çš„å†…å®¹
-    private void initOADFile(InputStream inputStream)
-    {
-        //è¯»å–æ–‡ä»¶
-        try {
-            byte[] buffer = new byte[1024];
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ;
-            // å¼€å§‹è¯»å–æ•°æ®
-            int len = 0;// æ¯æ¬¡è¯»å–åˆ°çš„æ•°æ®çš„é•¿åº¦
-            while ((len = inputStream.read(buffer)) != -1) {// lenå€¼ä¸º-1æ—¶ï¼Œè¡¨ç¤ºæ²¡æœ‰æ•°æ®äº†
-                // appendæ–¹æ³•å¾€sbå¯¹è±¡é‡Œé¢æ·»åŠ æ•°æ®
-                outputStream.write(buffer, 0, len);
-            }
-            // è¾“å‡ºå­—ç¬¦ä¸²
-            mFileBuffer = outputStream.toByteArray();
-            inputStream.close();
-            outputStream.close();
-        } catch (Exception e) {
-            Log.e("BleActivity", "" + e.getMessage());
-            return;
-        }
-        Log.i(TAG,"initA å½“å‰çš„æ•°ç»„é•¿åº¦ï¼š "+ mFileBuffer.length);
-        image.initTotal(mFileBuffer);
-    }
-
-
-    //OAD æ–‡ä»¶ä¼ è¾“åˆ°è“ç‰™ç»ˆç«¯
-    private void updateOAD(String updateVersion)
-    {
-        if (isDebug) Log.i(TAG, "onUpgradeFile address :  " +BaseURLOAD+ updateVersion);
-        InputStream mInputStream = onDownLoadOAD( BaseURLOAD +  updateVersion);
-        initOADFile(mInputStream);
-
-        byte[] data = null;
-        index = -1;
-        while (index <  image.nBlocks)
-        {
-            if(mBluetoothGatt == null || mHeadCharacteristic == null)
-            {
-                Log.e(TAG,"å¸¸ç”¨çš„å‘½ä»¤ç‰¹å¾æœåŠ¡ä¸¢å¤±ï¼");
-                //åˆ¤æ–­è¿æ¥çŠ¶æ€ï¼Œå¦‚æœè¿æ¥æ ‡å¿—ä¸ºtrue å¼ºåˆ¶æ–­å¼€è¿æ¥ï¼Œé‡æ–°æ‰«æå½“å‰çš„è®¾å¤‡ï¼Œå¦‚æœæ‰«æå¤±è´¥ï¼Œæç¤ºç”¨æˆ·è¿æ¥çš„è®¾å¤‡æœªæ‰¾åˆ°
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCallBack.onRead("OAD upgrade failed!", 2);
-                    }
-                });
-                return ;
-            }
-            index = index + 1;
-            boolean isStatue;
-            if(index == 0 )
-            {
-                data = getByte(true,0);
-                mHeadCharacteristic.setValue(data);
-                isStatue = mBluetoothGatt.writeCharacteristic(mHeadCharacteristic);
-            }
-            else
-            {
-                data = getByte(false,index);
-                mBodyCharacteristic.setValue(data);
-                isStatue = mBluetoothGatt.writeCharacteristic(mBodyCharacteristic);
-            }
-            //è®¡ç®—ç™¾åˆ†æ¯”
-            if(!isStatue)
-            {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(mCallBack != null) {
-                            mCallBack.onRead("OAD upgrade failed!", 2);
-                        }
-                    }
-                });
-                break;
-            }
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    String percentage = index+ "/"+ image.nBlocks;
-                    if(index == image.nBlocks )
-                    {
-                        percentage = "Wait for Bluetooth to automatically disconnect and restart...";
-                        //æ‰‹åŠ¨æ£€æµ‹,12ç§’åè‡ªåŠ¨è¿æ¥æ–­å¼€è“ç‰™æ‰«æ
-                    }
-                    if(mCallBack != null)
-                    {
-                        mCallBack.onProgress(percentage);
-                        Log.i(TAG,"ç™¾åˆ†æ¯”ï¼š "+ percentage+"\t degree: "+ percentage + "\t "+ image.nBlocks);
-                    }
-
-                }
-            });
-            try {
-                Thread.sleep(30);
-            }catch(Exception e)
-            {
-                Log.e(TAG,"OADå‡çº§å¼‚å¸¸ : " + e.getMessage());
-            }
-        }
-        readOADData();
-
-    }
-
-
-
-    private byte[] getByte(Boolean isHead,int index)
-    {
-        byte[] fileByte  = null;
-        fileByte = isHead? new byte[16]: new byte[18];
-        fileByte = fillData(fileByte);
-        if(isHead)
-        {
-//            System.arraycopy(mFileBuffer,image.iBytes,fileByte,0,16);
-            for(int i = 0;i<16;i++)
-            {
-                fileByte[i] = mFileBuffer[i+image.iBlocks];
-            }
-        }
-        else
-        {
-            image.iBlocks = index;
-            image.iBytes =  image.iBlocks* 16;
-            int currentIndex = image.iBlocks -1;
-
-            fileByte[0] =Conversion.loUint16((short) currentIndex);
-            fileByte[1] =  Conversion.hiUint16((short) currentIndex);
-            for (int i = 0; i<16 ; i++) {
-
-                if(i + image.iBytes <mFileBuffer.length)
-                {
-                    fileByte[i+2] = mFileBuffer[i +  image.iBytes];
-                }
-
-            }
-
-
-        }
-        return fileByte;
-    }
-
-    private byte[] fillData(byte[] data)
-    {
-        for(int i=0;i<data.length;i++)
-        {
-            data[i] = (byte) 0xff;
-        }
-        return data;
-    }
-
-    private class ImageA{
-        public int iBytes = 0; // Number of bytes programmed
-        public int iBlocks = 0; // Number of blocks programmed
-        public int nBlocks = 0; // Total number of blocks
-
-        public void initTotal(byte[] mFileBuffer)
-        {
-            if(mFileBuffer == null) return ;
-            nBlocks = mFileBuffer.length/OAD_BLOCK_SIZE;
-            Log.e("BlueService", "nBlocks:" + nBlocks + "mFileBuffer.length:"+mFileBuffer.length);
-        }
-    }
-
-    /************************************** * OAD æ–‡ä»¶åœ¨çº¿ä¸‹è½½ end* *********************************************/
-
+    /************************************** *  À¶ÑÀ³£ÓÃÍ¨ĞÅ end   * ***************************************************/
 }

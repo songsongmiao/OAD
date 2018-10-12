@@ -38,7 +38,7 @@ import java.util.ArrayList;
 public class LocalUpdateActivity extends AppCompatActivity implements CallBack{
 
     private final String TAG = "MainActivity";
-    private final boolean isDebug = false;
+    private final boolean isDebug = true;
 
      private BleSubService mBlueService;
      private TextView tvVersion,tvHard,tvProgress;
@@ -317,7 +317,15 @@ public class LocalUpdateActivity extends AppCompatActivity implements CallBack{
 
     @Override
     public void onReceive(byte[] message) {
-
+        if(message[0] == 48 || message[0] == 0)
+        {
+//            mHandler.postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//
+//                }
+//            },1000);
+        }
     }
 
     @Override
@@ -396,14 +404,15 @@ public class LocalUpdateActivity extends AppCompatActivity implements CallBack{
         if(percent.contains("Bluetooth"))
         {
             mCircleView.stopCircle();
-            tvProgress.setText("蓝牙文件上传成功，一分钟后\n将连接设备获取最新的版本号");
+            tvProgress.setText("蓝牙文件上传成功，15秒钟后\n将连接设备获取最新的版本号");
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                      if(!mBlueService.isConnect())
                      {
-                         mBlueService.onRestartConnect();// 重新连接
+//                         mBlueService.onRestartConnect();// 重新连接
 //                         mCustomProgram.onToast("重新连接！");
+                         mBlueService.onScann();
                          Log.i(TAG,"重新连接！");
                      }
                      else

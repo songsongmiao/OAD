@@ -21,13 +21,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
@@ -41,25 +34,17 @@ public class BleService extends Service {
     private final String TAG  = "BlueService";
     private final boolean isDebug = true;
     private String mDeviceName;
-    private boolean isConnect = false;
+//    private boolean isConnect = false;
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothAdapter mBluetoothAdapter;
-    private int size = 0;//扫描当前多少条数据
 
-    /***
-     * 当前的连接请求一次成功可能性较低
-     * 可以做三次循环请求
-     */
-    private boolean isFirst  = false;
 
     private BluetoothAdapter.LeScanCallback mScanCallback= new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
             String name = device.getName();
-            String address = device.getAddress();
             if(name == null) return ;
-            if(isDebug) Log.i(TAG,"name : "+ name + "\t address : "+ address);
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -74,20 +59,17 @@ public class BleService extends Service {
 
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-            if(size < 0 ) size = 0;
             String name = device.getName();
             String address = device.getAddress();
             if(name == null) return ;
-            if(isDebug) Log.i(TAG,"name : "+ name + "\t address : "+ address);
-            size  +=1;
             if(name.equals(mDeviceName)) // 连接设备
             {
                 if(mDeviceName == null || mBluetoothAdapter== null)
                     return ;
+                if(isDebug) Log.i(TAG,"connect -> name : "+ name + "\t address : "+ address);
                 mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(address);
                 mBluetoothGatt = mBluetoothDevice.connectGatt(BleService.this,false,mBluetoothGattCallback);//连接当前的设备,初始化蓝牙Gatt 对象
-                mBluetoothAdapter.stopLeScan(mScanCallback);
-                size = 0;
+                mBluetoothAdapter.stopLeScan(mScanConnectCallback);
             }
         }
     };
@@ -105,17 +87,6 @@ public class BleService extends Service {
     {
         this.mCallBack = mCallBack;
     }
-
-    public BluetoothDevice getDevice()
-    {
-        return mBluetoothDevice;
-    }
-
-    public void setmBluetoothDevice(BluetoothDevice mBluetoothDevice)
-    {
-        this.mBluetoothDevice = mBluetoothDevice;
-    }
-
 
     //BLE参数信息
     public final String UUID_SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb";
@@ -136,7 +107,6 @@ public class BleService extends Service {
 
     private final byte[] setHeart = {0x30,0x00,0x00};
     private final int COMMAND = 0x900;
-    private int index = -1;
 
 
 
@@ -148,11 +118,8 @@ public class BleService extends Service {
     /***
      * OAD 文件处理
      */
-    private final int OAD_BLOCK_SIZE = 16;
-    private byte[] mFileBuffer ;
-    private ImageA image = new ImageA();
     private String softVersion;
-    private String hardVeriosn;
+    private String hardVersion;
 
     public void setDeviceName(String deviceName)
     {
@@ -164,12 +131,6 @@ public class BleService extends Service {
         this.mDeviceName = deviceName;
     }
 
-    public String  getDeviceName()
-    {
-        return  this.mDeviceName;
-    }
-
-
     private Handler mHandler = new Handler(){
 
         @Override
@@ -178,16 +139,16 @@ public class BleService extends Service {
             switch (msg.what)
             {
                 case COMMAND:
-                    if(!isConnect)
-                    {
-                        orderQueue.clear();
-                        mHandler.removeMessages(COMMAND);
-                        return ;
-                    }
+//                    if(!isConnect)
+//                    {
+//                        orderQueue.clear();
+//                        mHandler.removeMessages(COMMAND);
+//                        return ;
+//                    }
                     if(orderQueue.size() > 0 )
                     {
                         mLock.lock();
-                        BleQuest mBleRuest = orderQueue.poll();
+                        BleQuest mBleRuest = orderQueue.poll();//拿到头部数据，并删除爱数据
                         BluetoothGattCharacteristic mCharacteristic = mBleRuest.mCharacteristic;
                         boolean isWrite = mBleRuest.isWrite;
                         if(mBluetoothGatt != null && mCharacteristic != null)
@@ -200,13 +161,12 @@ public class BleService extends Service {
                             {
                                 mBluetoothGatt.readCharacteristic(mCharacteristic);
                             }
-                            byte[] data = mCharacteristic.getValue();
-                            int[] bleCode = arrayByteToInt(data);
-                            String message  = intArrToString(bleCode);
-                            Log.i(TAG,"当前的数据： "+ message + "\t order: "+new String(data));
-
+                        }else{
+                            orderQueue.clear();
+                            mHandler.removeMessages(COMMAND);
+                            mLock.unlock();
+                            return;
                         }
-//                        preQueue.remove(mBleRuest);
                         mLock.unlock();
                         mHandler.sendEmptyMessageDelayed(COMMAND,30);
                     }
@@ -215,17 +175,14 @@ public class BleService extends Service {
                         mHandler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                if(orderQueue.size() > 0 )
-                                    mHandler.sendEmptyMessageDelayed(COMMAND,300);
-                                else
-                                    mHandler.removeMessages(COMMAND);
+                                mHandler.removeMessages(COMMAND);
                             }
                         },800);
 
                     }
                     break;
                 case 0x902:
-                    isConnect = false;
+//                    isConnect = false;
                     onConnect();
             }
 
@@ -261,11 +218,11 @@ public class BleService extends Service {
 
     public void onConnect()
     {
-        if(isConnect)
-        {
-            if(isDebug)Log.i(TAG,"onScan 当前连接已经成功");
-            return;
-        }
+//        if(isConnect)
+//        {
+//            if(isDebug)Log.i(TAG,"onScan 当前连接已经成功");
+//            return;
+//        }
         if(mDeviceName == null)
         {
 //            throw new NullPointerException("Please set the device name before scanning the device!");
@@ -288,11 +245,11 @@ public class BleService extends Service {
         {
             //提示用户扫描失败
             mBluetoothAdapter.stopLeScan(mScanConnectCallback);
-            size = -1;
-            if(!isConnect)
-            {
-                if(mCallBack!= null) mCallBack.onConnect(0);
-            }
+            if(mCallBack!= null) mCallBack.onConnect(0);
+//            if(!isConnect)
+//            {
+//                if(mCallBack!= null) mCallBack.onConnect(0);
+//            }
         }
         else
         {
@@ -305,10 +262,10 @@ public class BleService extends Service {
                         mBluetoothAdapter = manager.getAdapter();
                     }
                     mBluetoothAdapter.stopLeScan(mScanConnectCallback); //5秒后停止扫描
-                    if(!isConnect)
-                    {
-                        if(mCallBack!= null) mCallBack.onConnect(0);
-                    }
+//                    if(!isConnect)
+//                    {
+//                        if(mCallBack!= null) mCallBack.onConnect(0);
+//                    }
                 }
             },3000);
         }
@@ -330,13 +287,6 @@ public class BleService extends Service {
 
     }
 
-    public void onRestartConnect()
-    {
-        onDisConnected();
-        mHandler.sendEmptyMessageDelayed(0x902,2000);
-    }
-
-
     public void openAccessBlue()
     {
         final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
@@ -355,11 +305,11 @@ public class BleService extends Service {
 
     public void onScann()
     {
-        if(isConnect)
-        {
-            if(isDebug)Log.i(TAG,"onScan 当前连接已经成功");
-            return;
-        }
+//        if(isConnect)
+//        {
+//            if(isDebug)Log.i(TAG,"onScan 当前连接已经成功");
+//            return;
+//        }
         if(mDeviceName == null)
         {
             return ;
@@ -379,11 +329,11 @@ public class BleService extends Service {
         {
             //提示用户扫描失败
             mBluetoothAdapter.stopLeScan(mScanConnectCallback);
-            size = -1;
-            if(!isConnect)
-            {
-                if(mCallBack!= null) mCallBack.onConnect(0);
-            }
+            if(mCallBack!= null) mCallBack.onConnect(0);
+//            if(!isConnect)
+//            {
+//                if(mCallBack!= null) mCallBack.onConnect(0);
+//            }
         }
         else
         {
@@ -391,35 +341,14 @@ public class BleService extends Service {
                 @Override
                 public void run() {
                     mBluetoothAdapter.stopLeScan(mScanConnectCallback); //5秒后停止扫描
-                    if(!isConnect)
-                    {
-                        if(mCallBack!= null) mCallBack.onConnect(0);
-                    }
+//                    if(!isConnect)
+//                    {
+//                        if(mCallBack!= null) mCallBack.onConnect(0);
+//                    }
                 }
             },3000);
         }
 
-    }
-
-
-
-    /**
-     *  将时间转换成租期命令格式
-     *  @param mDay 天数
-     *  @param mHour 小时
-     *  @param mMin 分钟
-     *  @param mSecond 秒
-     *  @return 租期命令
-     */
-    public static byte[] timeToRent(long mDay,long mHour,long mMin,long mSecond){
-
-        byte[] rentTime={0x41,0x54,0x2B,0x44,0x65,0x61,0x64,0x4C,0x69,0x6E,0x65,0x3D,0x0,0x0,0x0,0x0,0x0};//H<=0x18 M<=3C S<=60
-        rentTime[12]=(byte)(mDay>>8);
-        rentTime[13]=(byte)mDay;
-        rentTime[14]=(byte)mHour;
-        rentTime[15]=(byte)mMin;
-        rentTime[16]=(byte)mSecond;
-        return rentTime;
     }
 
 
@@ -476,19 +405,13 @@ public class BleService extends Service {
 
     }
 
-    public void onConnectDevice(BluetoothDevice mBluetoothDevice)
-    {
-        this.mBluetoothDevice = mBluetoothDevice;
-        mBluetoothGatt = mBluetoothDevice.connectGatt(BleService.this,false,mBluetoothGattCallback);//连接当前的设备,初始化蓝牙Gatt 对象
-    }
-
     /************************************ * 测试区域代码 end * *************************************************/
 
 
 
     public void onDisConnected()
     {
-        isConnect = false;
+//        isConnect = false;
         if (mBluetoothGatt == null) {
             return;
         }
@@ -514,8 +437,7 @@ public class BleService extends Service {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             if(isDebug) Log.i(TAG,"onConnectionStateChange 蓝牙连接状态改变： "+ newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                isConnect = true;
-                isFirst = false;
+//                isConnect = true;
                 mBluetoothGatt.discoverServices();//初始化服务
                 if(mCallBack != null)
                 {
@@ -532,7 +454,7 @@ public class BleService extends Service {
             else if(newState == BluetoothProfile.STATE_DISCONNECTED)
             {
 
-                isConnect = false;
+//                isConnect = false;
                 if(mBluetoothGatt!= null) mBluetoothGatt.close();
                 mBluetoothGatt = null;
                 if(isDebug) Log.e(TAG,"onConnectionStateChange 连接失败");
@@ -578,17 +500,17 @@ public class BleService extends Service {
                     public void run() {
                         if(mCallBack != null)
                         {
-                            hardVeriosn=  new String(characteristic.getValue());
-                            hardVeriosn = hardVeriosn.replace("A","10");
-                            hardVeriosn = hardVeriosn.replace("B","11");
-                            hardVeriosn = hardVeriosn.replace("C","12");
-                            hardVeriosn = hardVeriosn.replace("D","13");
-                            hardVeriosn = hardVeriosn.replace("E","14");
-                            hardVeriosn = hardVeriosn.replace("F","15");
+                            hardVersion =  new String(characteristic.getValue());
+                            hardVersion = hardVersion.replace("A","10");
+                            hardVersion = hardVersion.replace("B","11");
+                            hardVersion = hardVersion.replace("C","12");
+                            hardVersion = hardVersion.replace("D","13");
+                            hardVersion = hardVersion.replace("E","14");
+                            hardVersion = hardVersion.replace("F","15");
 
-                            mCallBack.onRead(hardVeriosn,3);
+                            mCallBack.onRead(hardVersion,3);
 //                            checkOADStatue();
-                            boolean isCharacter = hardVeriosn.matches("^[a-zA-Z_0-9.]+$");
+                            boolean isCharacter = hardVersion.matches("^[a-zA-Z_0-9.]+$");
                             if(isDebug) Log.i(TAG,"onCharacteristicRead  包含字母：  "+ isCharacter);
                         }
                     }
@@ -676,7 +598,7 @@ public class BleService extends Service {
                         mHeadCharacteristic = gattCharacteristic;
                         mHeadCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                         setIndicationForCharacteristic(gattCharacteristic, true);
-                        if(isDebug)Log.e(TAG,"ffc1 \t" + gattCharacteristic.getWriteType() +"\tgetProperties:"+gattCharacteristic.getProperties() +"\tgetPermissions:"+gattCharacteristic.getPermissions());
+//                        if(isDebug)Log.e(TAG,"ffc1 \t" + gattCharacteristic.getWriteType() +"\tgetProperties:"+gattCharacteristic.getProperties() +"\tgetPermissions:"+gattCharacteristic.getPermissions());
 
                     }
                     else if(gattCharacteristic.getUuid().toString().contains("ffc2"))
@@ -684,14 +606,14 @@ public class BleService extends Service {
                         mBodyCharacteristic = gattCharacteristic;
                         mBodyCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                         setIndicationForCharacteristic(gattCharacteristic, true);
-                        if(isDebug)Log.e(TAG,"ffc2\t " + gattCharacteristic.getWriteType() +"\tgetProperties:"+gattCharacteristic.getProperties() +"\tgetPermissions:"+gattCharacteristic.getPermissions());
+//                        if(isDebug)Log.e(TAG,"ffc2\t " + gattCharacteristic.getWriteType() +"\tgetProperties:"+gattCharacteristic.getProperties() +"\tgetPermissions:"+gattCharacteristic.getPermissions());
                     }
                     else if(gattCharacteristic.getUuid().toString().contains("ffc4"))
                     {
                         mFinishCharacteristic = gattCharacteristic;
                         setIndicationForCharacteristic(gattCharacteristic, true);
 
-                        if(isDebug)Log.e(TAG,"ffc4 \t" + gattCharacteristic.getWriteType() +"\tgetProperties:"+gattCharacteristic.getProperties() +"\tgetPermissions:"+gattCharacteristic.getPermissions());
+//                        if(isDebug)Log.e(TAG,"ffc4 \t" + gattCharacteristic.getWriteType() +"\tgetProperties:"+gattCharacteristic.getProperties() +"\tgetPermissions:"+gattCharacteristic.getPermissions());
                     }
                 }
             }
@@ -736,7 +658,7 @@ public class BleService extends Service {
             public void run() {
                 sendCommonData(SET_CONNECT);
             }
-        },80);
+        },8000);
     }
 
 
@@ -885,10 +807,6 @@ public class BleService extends Service {
         addOrder(request);
     }
 
-    public boolean isConnect()
-    {
-        return isConnect;
-    }
 
     /***
      * 蓝牙数据接收
@@ -962,393 +880,5 @@ public class BleService extends Service {
 
 
     /************************************** *  蓝牙常用通信 end   * ***************************************************/
-
-
-
-
-
-
-
-
-    /************************************** * OAD 文件在线下载begin * *********************************************/
-    private final String BaseURLOAD = "http://app.zupig.com/bcoadbin/";
-    //判断接入点方式（net/wap），来建立连接
-    private HttpURLConnection getConnection(String address) throws Exception {
-        HttpURLConnection conn = null;
-
-        @SuppressWarnings("deprecation")
-        String proxyHost = android.net.Proxy.getDefaultHost();
-        if (proxyHost != null) {
-            // wap方式，要加网关
-            @SuppressWarnings("deprecation")
-            java.net.Proxy p = new java.net.Proxy(java.net.Proxy.Type.HTTP,
-                    new InetSocketAddress(android.net.Proxy.getDefaultHost(),
-                            android.net.Proxy.getDefaultPort()));
-            conn = (HttpURLConnection) new URL(address).openConnection(p);
-        } else {
-            conn = (HttpURLConnection) new URL(address).openConnection();
-        }
-        return conn;
-    }
-
-
-    /***
-     * 检查是否需要更新
-     */
-    public void checkOADStatue()
-    {
-        if(softVersion == null || hardVeriosn == null)
-        {
-            return ;
-        }
-        Runnable mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    String address = BaseURLOAD + softVersion + ".txt";
-                    String newFileInformation = onLoadData(address);
-                    String[] fileList = newFileInformation.split("=");
-                    String newVersion = fileList[0];
-                    Log.e(TAG,"比较当前的硬件版本号： "+ newVersion + "\t hardVersion: "+ hardVeriosn);
-                    if (newVersion.contains(hardVeriosn)) {
-                        //当前已经是最新版本
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",5);
-                                    if(isDebug) Log.i(TAG,"当前的OAD 为最新版本！");
-                                }
-                            }
-                        });
-                    }
-                    else
-                    {
-                        //可以经进行更新
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",4);
-                                    if(isDebug) Log.i(TAG,"当前的OAD 需要升级！");
-                                }
-                            }
-                        });
-                    }
-                }catch(Exception e)
-                {
-                    if(isDebug) Log.e(TAG,"检测OAD升级文件失败！"+ e.getMessage());
-                }
-
-
-            }
-        };
-        Thread thread = new Thread(mRunnable);
-        thread.start();
-    }
-
-
-    /***
-     * 检查是否需要更新
-     */
-    public void checkOADStatue(final String verion)
-    {
-        Runnable mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    if(softVersion == null) return ;
-                    String address = BaseURLOAD + verion;
-                    String newFileInformation = onLoadData(address);
-                    String[] fileList = newFileInformation.split("=");
-                    String newVersion = fileList[1];
-                    Log.e(TAG,"比较当前的硬件版本号： "+ newVersion + "\t hardVersion: "+ hardVeriosn + "\t adress: "+ address+ "\t text: "+ newFileInformation);
-                    if (newVersion.contains(softVersion)) {
-                        //当前已经是最新版本
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",5);
-                                    if(isDebug) Log.i(TAG,"当前的OAD 为最新版本！");
-                                }
-                            }
-                        });
-                    }
-                    else
-                    {
-                        //可以经进行更新
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(mCallBack != null)
-                                {
-                                    mCallBack.onRead("",4);
-                                    if(isDebug) Log.i(TAG,"当前的OAD 需要升级！");
-                                }
-                            }
-                        });
-                    }
-                }catch(Exception e)
-                {
-                    if(isDebug) Log.e(TAG,"检测OAD升级文件失败！"+ e.getMessage());
-                }
-
-
-            }
-        };
-        Thread thread = new Thread(mRunnable);
-        thread.start();
-    }
-
-
-    /***
-     * 进行OAD 在线升级
-     */
-    public void onUpgradeFile(String version)
-    {
-        this.softVersion = version;
-        Runnable mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    String address = BaseURLOAD + softVersion ;
-                    if(isDebug) Log.e(TAG,"当前地址："+ address);
-                    String newFileInformation = onLoadData(address);
-                    String[] fileList = newFileInformation.split("=");
-                    //可以进行更新
-                    String updateVersion = fileList[1];
-                    updateOAD(updateVersion);
-                }catch(Exception e)
-                {
-                    if(isDebug) Log.e(TAG,"检测OAD升级文件失败！"+ e.getMessage());
-                }
-
-            }
-        };
-
-        Thread thread = new Thread(mRunnable);
-        thread.start();
-    }
-
-
-    //加载在线OAD文件的文件名
-    private String onLoadData(String address)
-    {
-        HttpURLConnection conn = null;
-        String response = null;
-        try{
-            conn = getConnection(address);
-            conn.setConnectTimeout(6 * 1000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET");
-            int code = conn.getResponseCode();
-            if (code == HttpURLConnection.HTTP_OK) {
-                InputStream is = conn.getInputStream();
-                BufferedReader buffer = new BufferedReader(new InputStreamReader(is));
-                response = buffer.readLine();
-                buffer.close();
-                is.close();
-            }
-        }
-        catch(Exception e)
-        {
-            if(isDebug)Log.e(TAG,"加载文件失败： "+ e.getMessage());
-        }
-        return response;
-    }
-
-
-
-    //加载在线OAD 文件的文件内容
-    private InputStream onDownLoadOAD(String address)
-    {
-        HttpURLConnection conn = null;
-        InputStream response = null;
-        try{
-            conn = getConnection(address);
-            conn.setConnectTimeout(6 * 1000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET");
-            int code = conn.getResponseCode();
-            if (code == HttpURLConnection.HTTP_OK) {
-                response = conn.getInputStream();
-            }
-        }
-        catch(Exception e)
-        {
-            if(isDebug)Log.e(TAG,"加载文件失败： "+ e.getMessage());
-        }
-        return response;
-    }
-
-
-    //初始化OAD 文件中的内容
-    private void initOADFile(InputStream inputStream)
-    {
-        //读取文件
-        try {
-            byte[] buffer = new byte[1024];
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ;
-            // 开始读取数据
-            int len = 0;// 每次读取到的数据的长度
-            while ((len = inputStream.read(buffer)) != -1) {// len值为-1时，表示没有数据了
-                // append方法往sb对象里面添加数据
-                outputStream.write(buffer, 0, len);
-            }
-            // 输出字符串
-            mFileBuffer = outputStream.toByteArray();
-            inputStream.close();
-            outputStream.close();
-        } catch (Exception e) {
-            Log.e("BleActivity", "" + e.getMessage());
-            return;
-        }
-        Log.i(TAG,"initA 当前的数组长度： "+ mFileBuffer.length);
-        image.initTotal(mFileBuffer);
-    }
-
-
-    //OAD 文件传输到蓝牙终端
-    private void updateOAD(String updateVersion)
-    {
-        if (isDebug) Log.i(TAG, "onUpgradeFile address :  " +BaseURLOAD+ updateVersion);
-        InputStream mInputStream = onDownLoadOAD( BaseURLOAD +  updateVersion);
-        initOADFile(mInputStream);
-
-        byte[] data = null;
-        index = -1;
-        while (index <  image.nBlocks)
-        {
-            if(mBluetoothGatt == null || mHeadCharacteristic == null)
-            {
-                Log.e(TAG,"常用的命令特征服务丢失！");
-                //判断连接状态，如果连接标志为true 强制断开连接，重新扫描当前的设备，如果扫描失败，提示用户连接的设备未找到
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCallBack.onRead("OAD upgrade failed!", 2);
-                    }
-                });
-                return ;
-            }
-            index = index + 1;
-            boolean isStatue;
-            if(index == 0 )
-            {
-                data = getByte(true,0);
-                mHeadCharacteristic.setValue(data);
-                isStatue = mBluetoothGatt.writeCharacteristic(mHeadCharacteristic);
-            }
-            else
-            {
-                data = getByte(false,index);
-                mBodyCharacteristic.setValue(data);
-                isStatue = mBluetoothGatt.writeCharacteristic(mBodyCharacteristic);
-            }
-            //计算百分比
-            if(!isStatue)
-            {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(mCallBack != null) {
-                            mCallBack.onRead("OAD upgrade failed!", 2);
-                        }
-                    }
-                });
-                break;
-            }
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    String percentage = index+ "/"+ image.nBlocks;
-                    if(index == image.nBlocks )
-                    {
-                        percentage = "Wait for Bluetooth to automatically disconnect and restart...";
-                        //手动检测,12秒后自动连接断开蓝牙扫描
-                    }
-                    if(mCallBack != null)
-                    {
-                        mCallBack.onProgress(percentage);
-                        Log.i(TAG,"百分比： "+ percentage+"\t degree: "+ percentage + "\t "+ image.nBlocks);
-                    }
-
-                }
-            });
-            try {
-                Thread.sleep(30);
-            }catch(Exception e)
-            {
-                Log.e(TAG,"OAD升级异常 : " + e.getMessage());
-            }
-        }
-        readOADData();
-
-    }
-
-
-
-    private byte[] getByte(Boolean isHead,int index)
-    {
-        byte[] fileByte  = null;
-        fileByte = isHead? new byte[16]: new byte[18];
-        fileByte = fillData(fileByte);
-        if(isHead)
-        {
-//            System.arraycopy(mFileBuffer,image.iBytes,fileByte,0,16);
-            for(int i = 0;i<16;i++)
-            {
-                fileByte[i] = mFileBuffer[i+image.iBlocks];
-            }
-        }
-        else
-        {
-            image.iBlocks = index;
-            image.iBytes =  image.iBlocks* 16;
-            int currentIndex = image.iBlocks -1;
-
-            fileByte[0] =Conversion.loUint16((short) currentIndex);
-            fileByte[1] =  Conversion.hiUint16((short) currentIndex);
-            for (int i = 0; i<16 ; i++) {
-
-                if(i + image.iBytes <mFileBuffer.length)
-                {
-                    fileByte[i+2] = mFileBuffer[i +  image.iBytes];
-                }
-
-            }
-
-
-        }
-        return fileByte;
-    }
-
-    private byte[] fillData(byte[] data)
-    {
-        for(int i=0;i<data.length;i++)
-        {
-            data[i] = (byte) 0xff;
-        }
-        return data;
-    }
-
-    private class ImageA{
-        public int iBytes = 0; // Number of bytes programmed
-        public int iBlocks = 0; // Number of blocks programmed
-        public int nBlocks = 0; // Total number of blocks
-
-        public void initTotal(byte[] mFileBuffer)
-        {
-            if(mFileBuffer == null) return ;
-            nBlocks = mFileBuffer.length/OAD_BLOCK_SIZE;
-            Log.e("BlueService", "nBlocks:" + nBlocks + "mFileBuffer.length:"+mFileBuffer.length);
-        }
-    }
-
-    /************************************** * OAD 文件在线下载 end* *********************************************/
 
 }

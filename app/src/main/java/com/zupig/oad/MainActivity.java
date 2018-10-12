@@ -34,6 +34,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zupig.update.BleService;
+import com.zupig.update.BleSubService;
 import com.zupig.update.CallBack;
 import com.zupig.update.CustomProgress;
 import com.zupig.update.ScanDevice;
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements CallBack{
 
     private String TAG = "MainActivity";
     private final String BaseURLOAD = "http://app.zupig.com/bcoadbin/";
-    private final boolean isDebug = false;
+    private final boolean isDebug = true;
     public static final String DEVCENAME  = "DeviceName";
     public static final String UPGRADEVERSION = "UpgradeVersion";
     public static final String UPGRADEHARD = "UpgradeHard";
@@ -241,6 +242,7 @@ public class MainActivity extends AppCompatActivity implements CallBack{
                 {
                     ScanDevice mScan = mScanMap.get(key);
                     mDeviceList.add(mScan);
+                    Log.i("BlueService","near -> name:"+ mScan.getmDevice());
                 }
                 //检测是否有设备：
                 if(mDeviceList.size() == 0 )
@@ -414,11 +416,11 @@ public class MainActivity extends AppCompatActivity implements CallBack{
                                 if(response.length() <0)
                                     return ;
                                 String[] devices = response.split(",");
-                                String firstDevcie = devices[0];
-                                if(firstDevcie == null)
+                                String firstDevice = devices[0];
+                                if(firstDevice == null)
                                     return ;
                                 try {
-                                    String[] deviceInfo = firstDevcie.split("=");
+                                    String[] deviceInfo = firstDevice.split("=");
                                     String version = deviceInfo[1];
                                     if(version.length()> 8 ) {
                                         version = version.substring(0, version.length() - 8);
@@ -606,9 +608,12 @@ public class MainActivity extends AppCompatActivity implements CallBack{
         if(isDebug)Log.i(TAG,"调用了Start方法");
     }
 
+
+
     @Override
     protected void onResume() {
         super.onResume();
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         //处理6.0以上权限获取问题
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Android M Permission check
@@ -617,6 +622,13 @@ public class MainActivity extends AppCompatActivity implements CallBack{
             }
         }
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
     @Override
@@ -679,35 +691,27 @@ public class MainActivity extends AppCompatActivity implements CallBack{
                 mPopDialog.dismiss();
                 mPopDialog = null;
             }
+            //隐藏升级界面
+            mUpdateAction.setVisibility(View.GONE);
         }
         else if(statue == 2)
         {
             tvStatus.setText("连接成功");
             tvStatus.setTextColor(Color.GREEN);
+            mUpdateAction.setVisibility(View.VISIBLE);
         }
         else if(statue == 3 )
         {
             tvStatus.setText("正在连接");
             tvStatus.setTextColor(Color.YELLOW);
         }
-        if(mBlueService != null)
-        {
-            if(mBlueService.isConnect())
-            {
-                //显示升级界面
-                mUpdateAction.setVisibility(View.VISIBLE);
-            }
-            else
-            {
-                //隐藏升级界面
-                mUpdateAction.setVisibility(View.GONE);
-            }
-        }
     }
 
     @Override
     public void onReceive(byte[] message) {
-
+        int[] bleCode = BleSubService.arrayByteToInt(message);
+        String code  = BleSubService.intArrToString(bleCode);
+        Log.i("BlueService","" + code);
     }
 
     @Override
@@ -737,6 +741,7 @@ public class MainActivity extends AppCompatActivity implements CallBack{
             mDeviceObject.setSign(rss);
             mDeviceObject.setmDevice(mAddress);
             mScanMap.put(mAddress,mDeviceObject);
+            if(isDebug) Log.i("BlueService","connect -> name : "+ mAddress + "\t address : "+ mDevice.getAddress());
         }
     }
 
