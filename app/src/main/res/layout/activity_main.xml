@@ -291,6 +291,20 @@
 
             </RelativeLayout>
 
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/main_connect"
+                android:layout_below="@+id/main_online_container"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:text="连接"
+                style="@style/MainButtonStyle"
+                android:onClick="onConnection"
+                />
+
         </RelativeLayout>
 
      </ScrollView>

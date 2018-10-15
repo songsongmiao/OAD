@@ -198,8 +198,8 @@ public class MainActivity extends AppCompatActivity implements CallBack{
     private boolean isCompare(String oldHard,String newHard)
     {
         try{
-            String[] oldSpilt = oldHard.split(".");
-            String[] newSpilt = newHard.split(".");
+            String[] oldSpilt = oldHard.split("\\.");
+            String[] newSpilt = newHard.split("\\.");
             for(int i=0;i<oldSpilt.length;i++)
             {
                 Integer oldNumer = Integer.valueOf(oldSpilt[i]);
@@ -437,6 +437,7 @@ public class MainActivity extends AppCompatActivity implements CallBack{
 
                             @Override
                             public void onFailure(int code) {
+                                mCustomProgress.onToast("网络请求失败，请检查网络！");
                                 if(mPopDialog!= null)
                                     mPopDialog.dismiss();
                             }
@@ -452,6 +453,7 @@ public class MainActivity extends AppCompatActivity implements CallBack{
             @Override
             public void onFailure(int code) {
                 if(isDebug) Log.i(TAG,"code : " + code);
+                mCustomProgress.onToast("网络请求失败，请检查网络！");
                 if(mPopDialog!= null)
                     mPopDialog.dismiss();
             }
@@ -598,6 +600,24 @@ public class MainActivity extends AppCompatActivity implements CallBack{
 
         }
     };
+
+    public void onConnection(View view)
+    {
+        String mBluetooth = tvVersion.getText().toString();
+        if(mBluetooth == null)
+        {
+            mCustomProgress.onToast("请选择设备");
+            return ;
+        }
+        if(mBluetooth.equals(""))
+        {
+            mCustomProgress.onToast("请选择设备");
+            return ;
+        }
+        Intent intent = new Intent(MainActivity.this,OnlineUpdateActivity.class);
+        intent.putExtra("Bluetooth",mBluetooth);
+        startActivity(intent);
+    }
 
     @Override
     protected void onStart() {

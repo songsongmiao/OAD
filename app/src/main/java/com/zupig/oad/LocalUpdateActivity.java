@@ -372,8 +372,8 @@ public class LocalUpdateActivity extends AppCompatActivity implements CallBack{
     private boolean isCompare(String oldHard,String newHard)
     {
         try{
-            String[] oldSpilt = oldHard.split(".");
-            String[] newSpilt = newHard.split(".");
+            String[] oldSpilt = oldHard.split("\\.");
+            String[] newSpilt = newHard.split("\\.");
             for(int i=0;i<oldSpilt.length;i++)
             {
                 Integer oldNumer = Integer.valueOf(oldSpilt[i]);
